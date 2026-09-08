@@ -20,6 +20,30 @@
   background: color-mix(in srgb, var(--project-sidebar-color) 18%, transparent);
 }
 
+.project-colors-thread-provider-icon {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 12px;
+  height: 12px;
+  justify-content: center;
+  pointer-events: none;
+  width: 12px;
+}
+
+.project-colors-thread-provider-icon[data-provider-kind="claude"] {
+  color: #d97757;
+}
+
+.project-colors-thread-provider-icon[data-provider-kind="codex"] {
+  color: light-dark(#111111, #ffffff);
+}
+
+.project-colors-thread-provider-icon > svg {
+  display: block;
+  height: 12px;
+  width: 12px;
+}
+
 .project-colors-header-marker {
   display: none;
 }

@@ -1,4 +1,8 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import {
+  definePluginApp,
+  experimental_useProviders,
+  experimental_useSidebarThreads,
+} from "@get-bb/plugin-sdk/app";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
@@ -10,6 +14,7 @@ const PROJECT_TITLE_SELECTOR =
   ':scope [data-sidebar="group-label"] > span:first-child > span[title]';
 const CONTROL_CLASS = "project-colors-control";
 const COLORED_CLASS = "project-colors-colored";
+const THREAD_PROVIDER_ICON_CLASS = "project-colors-thread-provider-icon";
 const COLOR_CHANGE_EVENT = "project-colors:change";
 
 const COLORS = [
@@ -24,6 +29,11 @@ const COLORS = [
 
 type ColorId = (typeof COLORS)[number]["id"];
 type ProjectColors = Record<string, ColorId>;
+type SupportedProviderKind = "claude" | "codex";
+type ThreadProvider = {
+  kind: SupportedProviderKind;
+  label: string;
+};
 
 const colorById = new Map<ColorId, (typeof COLORS)[number]>(
   COLORS.map((color) => [color.id, color]),
@@ -71,6 +81,137 @@ export function findThreadHeaderColorTarget(marker: Element): HTMLElement | null
   const center = actions?.previousElementSibling;
   const target = center?.firstElementChild;
   return target instanceof HTMLElement ? target : null;
+}
+
+export function classifyProvider(provider: {
+  id: string;
+  displayName: string;
+  family?: string;
+}): SupportedProviderKind | null {
+  const identity = `${provider.id} ${provider.family ?? ""} ${provider.displayName}`
+    .toLocaleLowerCase();
+  if (/(^|[^a-z])codex([^a-z]|$)/u.test(identity)) return "codex";
+  if (/(^|[^a-z])claude([^a-z]|$)/u.test(identity)) return "claude";
+  return null;
+}
+
+function appendProviderMark(
+  target: HTMLElement,
+  kind: SupportedProviderKind,
+): void {
+  const namespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(namespace, "svg");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("viewBox", "0 0 24 24");
+
+  if (kind === "claude") {
+    const path = document.createElementNS(namespace, "path");
+    path.setAttribute(
+      "d",
+      "M12 3v18M3 12h18M5.64 5.64l12.72 12.72M18.36 5.64 5.64 18.36M8.55 3.7l6.9 16.6M3.7 15.45l16.6-6.9",
+    );
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-width", "1.45");
+    svg.append(path);
+  } else {
+    for (let index = 0; index < 6; index += 1) {
+      const angle = (Math.PI * index) / 3 - Math.PI / 2;
+      const circle = document.createElementNS(namespace, "circle");
+      circle.setAttribute("cx", String(12 + Math.cos(angle) * 3.35));
+      circle.setAttribute("cy", String(12 + Math.sin(angle) * 3.35));
+      circle.setAttribute("r", "3.55");
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", "currentColor");
+      circle.setAttribute("stroke-width", "1.35");
+      svg.append(circle);
+    }
+  }
+
+  target.append(svg);
+}
+
+function createThreadProviderIcon(provider: ThreadProvider): HTMLSpanElement {
+  const icon = document.createElement("span");
+  icon.className = THREAD_PROVIDER_ICON_CLASS;
+  icon.dataset.providerKind = provider.kind;
+  icon.setAttribute("aria-label", provider.label);
+  icon.setAttribute("role", "img");
+  icon.title = provider.label;
+
+  appendProviderMark(icon, provider.kind);
+  return icon;
+}
+
+export function ThreadProviderIcons() {
+  const threadState = experimental_useSidebarThreads();
+  const providerState = experimental_useProviders();
+
+  useEffect(() => {
+    const supportedProviders = new Map<string, ThreadProvider>();
+    if (providerState.status === "ready") {
+      for (const provider of providerState.providers) {
+        const kind = classifyProvider(provider);
+        if (kind !== null) {
+          supportedProviders.set(provider.id, {
+            kind,
+            label: provider.displayName,
+          });
+        }
+      }
+    }
+
+    const providersByThread = new Map<string, ThreadProvider>();
+    if (threadState.status === "ready") {
+      for (const thread of threadState.threads) {
+        const provider = supportedProviders.get(thread.providerId);
+        if (provider !== undefined) providersByThread.set(thread.id, provider);
+      }
+    }
+
+    const decorate = (): void => {
+      document
+        .querySelectorAll<HTMLElement>(
+          `${PROJECT_SELECTOR} [data-sidebar-thread-shortcut-target][data-sidebar-thread-id]`,
+        )
+        .forEach((link) => {
+          const threadId = link.dataset.sidebarThreadId;
+          const provider = threadId === undefined ? undefined : providersByThread.get(threadId);
+          const row = link.parentElement;
+          const title = row?.querySelector<HTMLElement>(".bb-sidebar-thread-title");
+          const current = row?.querySelector<HTMLElement>(
+            `:scope .${THREAD_PROVIDER_ICON_CLASS}`,
+          );
+
+          if (provider === undefined || title == null || row === null) {
+            current?.remove();
+            return;
+          }
+          if (
+            current?.dataset.providerKind === provider.kind &&
+            current.getAttribute("aria-label") === provider.label
+          ) {
+            return;
+          }
+
+          current?.remove();
+          title.before(createThreadProviderIcon(provider));
+        });
+    };
+
+    const observer = new MutationObserver(decorate);
+    observer.observe(document.body, { childList: true, subtree: true });
+    decorate();
+    return () => {
+      observer.disconnect();
+      document
+        .querySelectorAll(`.${THREAD_PROVIDER_ICON_CLASS}`)
+        .forEach((icon) => icon.remove());
+    };
+  }, [providerState.providers, providerState.status, threadState.status, threadState.threads]);
+
+  return null;
 }
 
 export function ThreadHeaderProjectColor({ projectId }: { projectId: string }) {
@@ -282,6 +423,10 @@ function mountProjectColors(signal: AbortSignal): () => void {
 }
 
 export default definePluginApp((app) => {
+  app.slots.experimental_appOverlay({
+    id: "thread-provider-icons",
+    component: ThreadProviderIcons,
+  });
   app.slots.experimental_threadHeaderAction({
     id: "project-color",
     title: "Project color",

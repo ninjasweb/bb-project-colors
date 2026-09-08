@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   loadPluginApp,
   mountPluginContentScripts,
+  renderSlot,
 } from "@get-bb/plugin-sdk/testing/app";
 
 describe("Project Colors", () => {
@@ -87,12 +88,90 @@ describe("Project Colors", () => {
     expect(css).toContain("border-radius: 0 !important");
     expect(css).toContain("border-radius: inherit !important");
     expect(css).toContain("[data-sidebar-thread-shortcut-target]");
+    expect(css).toContain(".project-colors-thread-provider-icon");
+    expect(css).toContain("flex: 0 0 12px");
+    expect(css).toContain('data-provider-kind="claude"');
+    expect(css).toContain("color: #d97757");
+    expect(css).toContain('data-provider-kind="codex"');
+    expect(css).toContain("color: light-dark(#111111, #ffffff)");
   });
 
-  it("registers a project color indicator for thread headers", async () => {
+  it("registers the thread provider overlay and project color header indicator", async () => {
     const app = await loadPluginApp(() => import("./app"));
+    expect(app.appOverlays).toHaveLength(1);
+    expect(app.appOverlays[0]?.id).toBe("thread-provider-icons");
     expect(app.threadHeaderActions).toHaveLength(1);
     expect(app.threadHeaderActions[0]?.id).toBe("project-color");
+  });
+
+  it("recognizes Codex and Claude providers without matching unrelated providers", async () => {
+    const { classifyProvider } = await import("./app");
+    expect(classifyProvider({ id: "codex", displayName: "Codex" })).toBe("codex");
+    expect(classifyProvider({ id: "claude-code", displayName: "Claude Code" })).toBe(
+      "claude",
+    );
+    expect(classifyProvider({ id: "cursor", displayName: "Cursor" })).toBeNull();
+  });
+
+  it("shows small provider icons before Codex and Claude thread titles only", async () => {
+    document.body.innerHTML = `
+      <aside>
+        <div data-sidebar-project-id="project-one">
+          <div class="thread-row">
+            <a data-sidebar-thread-shortcut-target data-sidebar-thread-id="thread-codex"></a>
+            <span class="bb-sidebar-thread-title" id="title-codex">Codex thread</span>
+          </div>
+          <div class="thread-row">
+            <a data-sidebar-thread-shortcut-target data-sidebar-thread-id="thread-claude"></a>
+            <span class="bb-sidebar-thread-title" id="title-claude">Claude thread</span>
+          </div>
+          <div class="thread-row">
+            <a data-sidebar-thread-shortcut-target data-sidebar-thread-id="thread-other"></a>
+            <span class="bb-sidebar-thread-title" id="title-other">Other thread</span>
+          </div>
+        </div>
+      </aside>
+    `;
+
+    const app = await loadPluginApp(() => import("./app"));
+    const overlay = renderSlot(app.appOverlays[0]!, {}, {
+      sidebarThreads: {
+        status: "ready",
+        projects: [],
+        threads: [
+          { id: "thread-codex", providerId: "codex" } as never,
+          { id: "thread-claude", providerId: "claude-code" } as never,
+          { id: "thread-other", providerId: "cursor" } as never,
+        ],
+      },
+      providers: {
+        status: "ready",
+        providers: [
+          { id: "codex", displayName: "Codex", logoUrl: null } as never,
+          { id: "claude-code", displayName: "Claude Code", logoUrl: null } as never,
+          { id: "cursor", displayName: "Cursor", logoUrl: null } as never,
+        ],
+      },
+    });
+
+    const codexTitle = document.querySelector("#title-codex")!;
+    const codexIcon = codexTitle.previousElementSibling;
+    expect(codexIcon?.classList.contains("project-colors-thread-provider-icon")).toBe(true);
+    expect(codexIcon?.getAttribute("data-provider-kind")).toBe("codex");
+    expect(codexIcon?.querySelector("svg")).not.toBeNull();
+
+    const claudeTitle = document.querySelector("#title-claude")!;
+    expect(claudeTitle.previousElementSibling?.getAttribute("data-provider-kind")).toBe(
+      "claude",
+    );
+    expect(
+      document.querySelector("#title-other")?.previousElementSibling?.classList.contains(
+        "project-colors-thread-provider-icon",
+      ),
+    ).toBe(false);
+
+    overlay.lifecycle.unmount();
+    expect(document.querySelector(".project-colors-thread-provider-icon")).toBeNull();
   });
 
   it("finds the title area next to the current thread actions", async () => {
