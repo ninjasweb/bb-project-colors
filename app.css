@@ -20,6 +20,22 @@
   background: color-mix(in srgb, var(--project-sidebar-color) 18%, transparent);
 }
 
+.project-colors-header-marker {
+  display: none;
+}
+
+.project-colors-header-dot {
+  background: var(--project-header-color);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--project-header-color) 14%, transparent);
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 10px;
+  order: -1;
+  width: 10px;
+}
+
 .project-colors-control {
   align-items: center;
   background: transparent;

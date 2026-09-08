@@ -2,6 +2,8 @@
 // @vitest-environment-options { "url": "http://localhost/" }
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   loadPluginApp,
@@ -10,6 +12,8 @@ import {
 
 describe("Project Colors", () => {
   beforeEach(() => {
+    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
+      .IS_REACT_ACT_ENVIRONMENT = true;
     const values = new Map<string, string>();
     Object.defineProperty(window, "localStorage", {
       configurable: true,
@@ -78,5 +82,55 @@ describe("Project Colors", () => {
     expect(css).toContain("background: color-mix");
     expect(css).toContain("border-radius: 0 !important");
     expect(css).toContain("[data-sidebar-thread-shortcut-target]");
+  });
+
+  it("registers a project color indicator for thread headers", async () => {
+    const app = await loadPluginApp(() => import("./app"));
+    expect(app.threadHeaderActions).toHaveLength(1);
+    expect(app.threadHeaderActions[0]?.id).toBe("project-color");
+  });
+
+  it("finds the title area next to the current thread actions", async () => {
+    const { findThreadHeaderColorTarget } = await import("./app");
+    document.body.innerHTML = `
+      <header>
+        <div data-testid="app-page-header-content-row">
+          <div><div id="thread-title-area"><span>Thread title</span></div></div>
+          <div data-app-page-header-actions><span id="plugin-marker"></span></div>
+        </div>
+      </header>
+    `;
+
+    const marker = document.querySelector("#plugin-marker")!;
+    expect(findThreadHeaderColorTarget(marker)?.id).toBe("thread-title-area");
+  });
+
+  it("shows the assigned project color before the thread title", async () => {
+    const { ThreadHeaderProjectColor } = await import("./app");
+    window.localStorage.setItem(
+      "bb.project-colors.v1",
+      JSON.stringify({ "project-pixels": "yellow" }),
+    );
+    document.body.innerHTML = `
+      <header>
+        <div data-testid="app-page-header-content-row">
+          <div><div id="thread-title-area"><span>Thread title</span></div></div>
+          <div data-app-page-header-actions>
+            <span role="group"><span id="plugin-root"></span></span>
+          </div>
+        </div>
+      </header>
+    `;
+
+    const root = createRoot(document.querySelector("#plugin-root")!);
+    await act(async () => {
+      root.render(<ThreadHeaderProjectColor projectId="project-pixels" />);
+    });
+
+    const dot = document.querySelector<HTMLElement>("#thread-title-area .project-colors-header-dot");
+    expect(dot?.getAttribute("aria-label")).toBe("Project color: Yellow");
+    expect(dot?.style.getPropertyValue("--project-header-color")).toBe("#eab308");
+
+    await act(async () => root.unmount());
   });
 });

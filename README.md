@@ -33,8 +33,9 @@ Select the active color again to return the project to bb's default styling.
 Choices are stored locally in each bb client, so every desktop or browser can
 have its own visual organization.
 
-The chosen color appears as a square, translucent project heading and softly
-tints every thread nested under that project.
+The chosen color appears as a square, translucent project heading, softly
+tints every thread nested under that project, and adds a matching dot before
+the active conversation title.
 
 ## Develop
 

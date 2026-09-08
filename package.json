@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-project-colors",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Choose a color for each project directly from the bb sidebar.",
   "type": "module",
@@ -54,6 +54,7 @@
     "@testing-library/react": "^16.3.3",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jsdom": "^26.1.0",

@@ -1,10 +1,14 @@
 import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import "./app.css";
 
 const STORAGE_KEY = "bb.project-colors.v1";
 const PROJECT_SELECTOR = "[data-sidebar-project-id]";
 const CONTROL_CLASS = "project-colors-control";
 const COLORED_CLASS = "project-colors-colored";
+const COLOR_CHANGE_EVENT = "project-colors:change";
 
 const COLORS = [
   { id: "red", label: "Red", swatch: "#ef4444", color: "light-dark(#b91c1c, #f87171)" },
@@ -57,6 +61,56 @@ function writeProjectColors(colors: ProjectColors): void {
   } catch {
     // Keep the current visual state when client storage is unavailable.
   }
+  window.dispatchEvent(new Event(COLOR_CHANGE_EVENT));
+}
+
+export function findThreadHeaderColorTarget(marker: Element): HTMLElement | null {
+  const actions = marker.closest("[data-app-page-header-actions]");
+  const center = actions?.previousElementSibling;
+  const target = center?.firstElementChild;
+  return target instanceof HTMLElement ? target : null;
+}
+
+export function ThreadHeaderProjectColor({ projectId }: { projectId: string }) {
+  const markerRef = useRef<HTMLSpanElement>(null);
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [colorId, setColorId] = useState<ColorId | undefined>(
+    () => readProjectColors()[projectId],
+  );
+
+  useLayoutEffect(() => {
+    const marker = markerRef.current;
+    setTarget(marker === null ? null : findThreadHeaderColorTarget(marker));
+  }, []);
+
+  useEffect(() => {
+    const refresh = (): void => setColorId(readProjectColors()[projectId]);
+    refresh();
+    window.addEventListener(COLOR_CHANGE_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(COLOR_CHANGE_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [projectId]);
+
+  const preset = colorId === undefined ? undefined : colorById.get(colorId);
+  return (
+    <>
+      <span ref={markerRef} className="project-colors-header-marker" />
+      {target !== null && preset !== undefined
+        ? createPortal(
+            <span
+              aria-label={`Project color: ${preset.label}`}
+              className="project-colors-header-dot"
+              role="img"
+              style={{ "--project-header-color": preset.swatch } as CSSProperties}
+            />,
+            target,
+          )
+        : null}
+    </>
+  );
 }
 
 function projectIdFor(row: Element): string | null {
@@ -228,6 +282,11 @@ function mountProjectColors(signal: AbortSignal): () => void {
 }
 
 export default definePluginApp((app) => {
+  app.slots.experimental_threadHeaderAction({
+    id: "project-color",
+    title: "Project color",
+    component: ThreadHeaderProjectColor,
+  });
   app.contentScripts.register({
     id: "project-colors",
     mount: ({ signal }) => mountProjectColors(signal),
