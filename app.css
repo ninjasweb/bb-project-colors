@@ -1,0 +1,100 @@
+.project-colors-colored > [data-sidebar-sticky-group] > [data-sidebar="group-label"] {
+  background: color-mix(in srgb, var(--project-sidebar-color) 18%, transparent);
+  border-radius: 0 !important;
+  box-shadow: inset 3px 0 0 var(--project-sidebar-color);
+}
+
+.project-colors-colored > [data-sidebar-sticky-group] > [data-sidebar="group-label"]
+  > span:first-child
+  > span[title] {
+  color: var(--project-sidebar-color) !important;
+}
+
+.project-colors-colored [data-sidebar-thread-shortcut-target] {
+  background: color-mix(in srgb, var(--project-sidebar-color) 10%, transparent);
+  border-radius: 0 !important;
+}
+
+.project-colors-colored [data-sidebar-thread-shortcut-target]:hover,
+.project-colors-colored [data-sidebar-thread-shortcut-target]:focus-visible {
+  background: color-mix(in srgb, var(--project-sidebar-color) 18%, transparent);
+}
+
+.project-colors-control {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--project-swatch, currentColor);
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: 24px;
+}
+
+.project-colors-control:hover,
+.project-colors-control:focus-visible {
+  background: var(--sidebar-accent);
+  outline: none;
+}
+
+.project-colors-control:focus-visible {
+  box-shadow: 0 0 0 2px var(--sidebar-ring);
+}
+
+.project-colors-control > span {
+  background: var(--project-swatch, currentColor);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 999px;
+  height: 10px;
+  width: 10px;
+}
+
+.project-colors-palette {
+  align-items: center;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px color-mix(in srgb, black 18%, transparent);
+  display: flex;
+  gap: 5px;
+  padding: 7px;
+  position: fixed;
+  z-index: 10000;
+}
+
+.project-colors-swatch {
+  appearance: none;
+  background: var(--project-swatch);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, black 14%, transparent);
+  cursor: pointer;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  width: 22px;
+}
+
+.project-colors-swatch:hover {
+  transform: scale(1.1);
+}
+
+.project-colors-swatch[aria-checked="true"] {
+  border-color: var(--popover);
+  box-shadow: 0 0 0 2px var(--project-swatch);
+}
+
+.project-colors-swatch:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .project-colors-swatch {
+    transition: transform 120ms ease-out;
+  }
+}
