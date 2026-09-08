@@ -6,6 +6,8 @@ import "./app.css";
 
 const STORAGE_KEY = "bb.project-colors.v1";
 const PROJECT_SELECTOR = "[data-sidebar-project-id]";
+const PROJECT_TITLE_SELECTOR =
+  ':scope [data-sidebar="group-label"] > span:first-child > span[title]';
 const CONTROL_CLASS = "project-colors-control";
 const COLORED_CLASS = "project-colors-colored";
 const COLOR_CHANGE_EVENT = "project-colors:change";
@@ -222,10 +224,8 @@ function mountProjectColors(signal: AbortSignal): () => void {
       if (projectId === null) return;
 
       if (row.querySelector(`:scope .${CONTROL_CLASS}`) === null) {
-        const controls = row.querySelector<HTMLElement>(
-          ':scope [data-sidebar="group-label"] [data-sidebar-trailing-controls] > span',
-        );
-        if (controls !== null) {
+        const title = row.querySelector<HTMLElement>(PROJECT_TITLE_SELECTOR);
+        if (title !== null) {
           const button = document.createElement("button");
           button.type = "button";
           button.className = CONTROL_CLASS;
@@ -241,7 +241,7 @@ function mountProjectColors(signal: AbortSignal): () => void {
             event.stopPropagation();
             openPalette(button, projectId);
           });
-          controls.prepend(button);
+          title.before(button);
         }
       }
       applyColor(row);

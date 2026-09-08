@@ -39,7 +39,7 @@ describe("Project Colors", () => {
         <div data-sidebar-project-id="project-one">
           <div data-sidebar-sticky-group>
             <div data-sidebar="group-label">
-              <span><span title="Project one">Project one</span></span>
+              <span id="project-title-row"><span title="Project one">Project one</span></span>
               <span data-sidebar-trailing-controls><span></span></span>
             </div>
           </div>
@@ -54,8 +54,11 @@ describe("Project Colors", () => {
     });
     const row = document.querySelector<HTMLElement>("[data-sidebar-project-id]")!;
     const picker = document.querySelector<HTMLButtonElement>(".project-colors-control")!;
+    const title = document.querySelector<HTMLElement>('[title="Project one"]')!;
 
     expect(picker).not.toBeNull();
+    expect(picker.parentElement?.id).toBe("project-title-row");
+    expect(picker.nextElementSibling).toBe(title);
     picker.click();
     const choices = [...document.querySelectorAll<HTMLButtonElement>(".project-colors-swatch")];
     expect(choices).toHaveLength(7);
@@ -77,10 +80,12 @@ describe("Project Colors", () => {
     expect(document.querySelector(".project-colors-control")).toBeNull();
   });
 
-  it("uses square translucent colors for projects and their threads", () => {
+  it("uses a one-pixel project edge and inherits the thread row radius", () => {
     const css = readFileSync(resolve(process.cwd(), "app.css"), "utf8");
     expect(css).toContain("background: color-mix");
+    expect(css).toContain("box-shadow: inset 1px 0 0 var(--project-sidebar-color)");
     expect(css).toContain("border-radius: 0 !important");
+    expect(css).toContain("border-radius: inherit !important");
     expect(css).toContain("[data-sidebar-thread-shortcut-target]");
   });
 

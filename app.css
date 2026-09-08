@@ -1,7 +1,7 @@
 .project-colors-colored > [data-sidebar-sticky-group] > [data-sidebar="group-label"] {
   background: color-mix(in srgb, var(--project-sidebar-color) 18%, transparent);
   border-radius: 0 !important;
-  box-shadow: inset 3px 0 0 var(--project-sidebar-color);
+  box-shadow: inset 1px 0 0 var(--project-sidebar-color);
 }
 
 .project-colors-colored > [data-sidebar-sticky-group] > [data-sidebar="group-label"]
@@ -12,7 +12,7 @@
 
 .project-colors-colored [data-sidebar-thread-shortcut-target] {
   background: color-mix(in srgb, var(--project-sidebar-color) 10%, transparent);
-  border-radius: 0 !important;
+  border-radius: inherit !important;
 }
 
 .project-colors-colored [data-sidebar-thread-shortcut-target]:hover,
@@ -44,11 +44,13 @@
   color: var(--project-swatch, currentColor);
   cursor: pointer;
   display: inline-flex;
-  height: 24px;
+  flex: 0 0 20px;
+  height: 20px;
   justify-content: center;
-  margin: 0;
+  margin: 0 2px 0 0;
   padding: 0;
-  width: 24px;
+  vertical-align: middle;
+  width: 20px;
 }
 
 .project-colors-control:hover,
