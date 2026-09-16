@@ -1,3 +1,8 @@
+.bb-sidebar-hover-actions-row:has(> [data-sidebar-thread-shortcut-target]),
+[data-sidebar-thread-shortcut-target] {
+  border-radius: 0 !important;
+}
+
 .project-colors-colored > [data-sidebar-sticky-group] > [data-sidebar="group-label"] {
   background: color-mix(in srgb, var(--project-sidebar-color) 18%, transparent);
   border-radius: 0 !important;
@@ -12,7 +17,6 @@
 
 .project-colors-colored [data-sidebar-thread-shortcut-target] {
   background: color-mix(in srgb, var(--project-sidebar-color) 10%, transparent);
-  border-radius: inherit !important;
 }
 
 .project-colors-colored [data-sidebar-thread-shortcut-target]:hover,
@@ -23,11 +27,11 @@
 .project-colors-thread-provider-icon {
   align-items: center;
   display: inline-flex;
-  flex: 0 0 12px;
-  height: 12px;
+  flex: 0 0 20px;
+  height: 20px;
   justify-content: center;
   pointer-events: none;
-  width: 12px;
+  width: 20px;
 }
 
 .project-colors-thread-provider-icon[data-provider-kind="claude"] {
@@ -46,6 +50,10 @@
 
 .project-colors-header-marker {
   display: none;
+}
+
+.project-colors-header-colored {
+  background: color-mix(in srgb, var(--project-header-color) 14%, transparent) !important;
 }
 
 .project-colors-header-dot {

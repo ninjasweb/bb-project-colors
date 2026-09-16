@@ -81,15 +81,25 @@ describe("Project Colors", () => {
     expect(document.querySelector(".project-colors-control")).toBeNull();
   });
 
-  it("uses a one-pixel project edge and inherits the thread row radius", () => {
+  it("uses square project and thread rows with a translucent header tint", () => {
     const css = readFileSync(resolve(process.cwd(), "app.css"), "utf8");
     expect(css).toContain("background: color-mix");
     expect(css).toContain("box-shadow: inset 1px 0 0 var(--project-sidebar-color)");
     expect(css).toContain("border-radius: 0 !important");
-    expect(css).toContain("border-radius: inherit !important");
+    expect(css).not.toContain("border-radius: inherit !important");
     expect(css).toContain("[data-sidebar-thread-shortcut-target]");
+    expect(css).toContain(
+      ".bb-sidebar-hover-actions-row:has(> [data-sidebar-thread-shortcut-target]),\n" +
+        "[data-sidebar-thread-shortcut-target]",
+    );
+    expect(css).toContain(".project-colors-header-colored");
+    expect(css).toContain(
+      "background: color-mix(in srgb, var(--project-header-color) 14%, transparent)",
+    );
     expect(css).toContain(".project-colors-thread-provider-icon");
-    expect(css).toContain("flex: 0 0 12px");
+    expect(css.match(/flex: 0 0 20px/g)).toHaveLength(2);
+    expect(css.match(/height: 20px/g)).toHaveLength(2);
+    expect(css.match(/width: 20px/g)).toHaveLength(2);
     expect(css).toContain('data-provider-kind="claude"');
     expect(css).toContain("color: #d97757");
     expect(css).toContain('data-provider-kind="codex"');
@@ -174,10 +184,12 @@ describe("Project Colors", () => {
     expect(document.querySelector(".project-colors-thread-provider-icon")).toBeNull();
   });
 
-  it("finds the title area next to the current thread actions", async () => {
-    const { findThreadHeaderColorTarget } = await import("./app");
+  it("finds the title area and complete header surface next to the actions", async () => {
+    const { findThreadHeaderColorSurface, findThreadHeaderColorTarget } = await import(
+      "./app"
+    );
     document.body.innerHTML = `
-      <header>
+      <header id="thread-header-surface">
         <div data-testid="app-page-header-content-row">
           <div><div id="thread-title-area"><span>Thread title</span></div></div>
           <div data-app-page-header-actions><span id="plugin-marker"></span></div>
@@ -187,6 +199,7 @@ describe("Project Colors", () => {
 
     const marker = document.querySelector("#plugin-marker")!;
     expect(findThreadHeaderColorTarget(marker)?.id).toBe("thread-title-area");
+    expect(findThreadHeaderColorSurface(marker)?.id).toBe("thread-header-surface");
   });
 
   it("shows the assigned project color before the thread title", async () => {
@@ -196,7 +209,7 @@ describe("Project Colors", () => {
       JSON.stringify({ "project-pixels": "yellow" }),
     );
     document.body.innerHTML = `
-      <header>
+      <header id="thread-header-surface">
         <div data-testid="app-page-header-content-row">
           <div><div id="thread-title-area"><span>Thread title</span></div></div>
           <div data-app-page-header-actions>
@@ -215,6 +228,12 @@ describe("Project Colors", () => {
     expect(dot?.getAttribute("aria-label")).toBe("Project color: Yellow");
     expect(dot?.style.getPropertyValue("--project-header-color")).toBe("#eab308");
 
+    const surface = document.querySelector<HTMLElement>("#thread-header-surface")!;
+    expect(surface.classList.contains("project-colors-header-colored")).toBe(true);
+    expect(surface.style.getPropertyValue("--project-header-color")).toBe("#eab308");
+
     await act(async () => root.unmount());
+    expect(surface.classList.contains("project-colors-header-colored")).toBe(false);
+    expect(surface.style.getPropertyValue("--project-header-color")).toBe("");
   });
 });

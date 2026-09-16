@@ -14,6 +14,7 @@ const PROJECT_TITLE_SELECTOR =
   ':scope [data-sidebar="group-label"] > span:first-child > span[title]';
 const CONTROL_CLASS = "project-colors-control";
 const COLORED_CLASS = "project-colors-colored";
+const HEADER_COLORED_CLASS = "project-colors-header-colored";
 const THREAD_PROVIDER_ICON_CLASS = "project-colors-thread-provider-icon";
 const COLOR_CHANGE_EVENT = "project-colors:change";
 
@@ -81,6 +82,12 @@ export function findThreadHeaderColorTarget(marker: Element): HTMLElement | null
   const center = actions?.previousElementSibling;
   const target = center?.firstElementChild;
   return target instanceof HTMLElement ? target : null;
+}
+
+export function findThreadHeaderColorSurface(marker: Element): HTMLElement | null {
+  const actions = marker.closest("[data-app-page-header-actions]");
+  const surface = actions?.closest("header");
+  return surface instanceof HTMLElement ? surface : null;
 }
 
 export function classifyProvider(provider: {
@@ -217,6 +224,7 @@ export function ThreadProviderIcons() {
 export function ThreadHeaderProjectColor({ projectId }: { projectId: string }) {
   const markerRef = useRef<HTMLSpanElement>(null);
   const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [surface, setSurface] = useState<HTMLElement | null>(null);
   const [colorId, setColorId] = useState<ColorId | undefined>(
     () => readProjectColors()[projectId],
   );
@@ -224,6 +232,7 @@ export function ThreadHeaderProjectColor({ projectId }: { projectId: string }) {
   useLayoutEffect(() => {
     const marker = markerRef.current;
     setTarget(marker === null ? null : findThreadHeaderColorTarget(marker));
+    setSurface(marker === null ? null : findThreadHeaderColorSurface(marker));
   }, []);
 
   useEffect(() => {
@@ -238,6 +247,17 @@ export function ThreadHeaderProjectColor({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   const preset = colorId === undefined ? undefined : colorById.get(colorId);
+
+  useEffect(() => {
+    if (surface === null || preset === undefined) return;
+    surface.classList.add(HEADER_COLORED_CLASS);
+    surface.style.setProperty("--project-header-color", preset.swatch);
+    return () => {
+      surface.classList.remove(HEADER_COLORED_CLASS);
+      surface.style.removeProperty("--project-header-color");
+    };
+  }, [preset, surface]);
+
   return (
     <>
       <span ref={markerRef} className="project-colors-header-marker" />
