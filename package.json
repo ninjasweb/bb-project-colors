@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-project-colors",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "Choose a color for each project directly from the bb sidebar.",
   "type": "module",
